@@ -1,10 +1,15 @@
 #!/bin/bash
 
 awsmeta() {
-  local v ret=0
+  local v res ret=0
   for v in "$@"; do
-    curl -sf "http://169.254.169.254/latest/meta-data/$v" 2>/dev/null | perl -pe's/\n*$/\n/'
-    [[ $PIPESTATUS != 0 ]] && { ret=1; echo; }
+    res=$(curl -sf "http://169.254.169.254/latest/meta-data/$v" 2>/dev/null | perl -pe's/\n*$/\n/'; exit $PIPESTATUS)
+    [[ $? != 0 ]] && ret=1
+    if [[ $v == public-keys/ ]]; then
+      # ここだけ変な仕様なので余分な出力を捨ててパスに見えるようにする
+      res=$(perl -pe's/=.*/\//'<<<"$res")
+    fi
+    echo "$res"
   done
   return $ret
 }
